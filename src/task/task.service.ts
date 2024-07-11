@@ -4,6 +4,11 @@ import { UpdateTaskDto } from './dto/update-task.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Task } from './entities/task.entity';
 import { Repository } from 'typeorm';
+import {
+  errorResponse,
+  successResponse,
+} from 'src/common/helpers/response.helper';
+import { ApiResponse } from 'src/utils/interface';
 
 @Injectable()
 export class TaskService {
@@ -11,11 +16,9 @@ export class TaskService {
     @InjectRepository(Task) private taskRepository: Repository<Task>,
   ) {}
 
-  async create(createTaskDto: CreateTaskDto): Promise<{
-    status: number;
-    message: string;
-    data: CreateTaskDto;
-  }> {
+  async create(
+    createTaskDto: CreateTaskDto,
+  ): Promise<ApiResponse<CreateTaskDto>> {
     console.log('datass ', createTaskDto);
     if (
       createTaskDto.date &&
@@ -26,124 +29,77 @@ export class TaskService {
       try {
         const tasks: CreateTaskDto = this.taskRepository.create(createTaskDto);
         await this.taskRepository.save(tasks);
-        return {
-          status: HttpStatus.CREATED,
-          message: 'Successfully created tasks.',
-          data: tasks,
-        };
+
+        return successResponse('Successfully created tasks.', tasks);
       } catch (error) {
-        return {
-          status: error.code,
-          message: error.message,
-          data: null,
-        };
+        return errorResponse(error.message, error);
       }
     } else {
-      return {
-        status: HttpStatus.BAD_REQUEST,
-        message: 'Ensure all field are completetely filled',
-        data: null,
-      };
+      return errorResponse(
+        'Ensure all field are completetely filled',
+        HttpStatus.BAD_REQUEST,
+      );
     }
   }
 
-  async findAll(): Promise<{
-    status: number;
-    message: string;
-    data: CreateTaskDto[];
-  }> {
+  async findAll(): Promise<ApiResponse<CreateTaskDto[]>> {
     try {
       const tasks: CreateTaskDto[] = await this.taskRepository.find();
       console.log(tasks);
 
-      return {
-        status: HttpStatus.FOUND,
-        message: 'Successfully fetched all tasks',
-        data: tasks,
-      };
+      return successResponse('Successfully fetched all tasks.', tasks);
     } catch (error) {
-      return {
-        status: error.code,
-        message: error.message,
-        data: [],
-      };
+      return errorResponse(error.message, error);
     }
   }
 
-  async findOne(id: string): Promise<{
-    status: number;
-    message: string;
-    data: CreateTaskDto;
-  }> {
+  async findOne(id: string): Promise<ApiResponse<CreateTaskDto>> {
     try {
       const tasks: CreateTaskDto = await this.taskRepository.findOne({
         where: { id },
       });
-      return {
-        status: HttpStatus.FOUND,
-        message: `Successfully gotten the task at id ${id}`,
-        data: tasks,
-      };
+      return successResponse(`Successfully gotten the task at id ${id}`, tasks);
     } catch (error) {
-      return {
-        status: error.code,
-        message: error.message,
-        data: null,
-      };
+      return errorResponse(error.message, error);
     }
   }
 
   async update(
     id: string,
     updateTaskDto: UpdateTaskDto,
-  ): Promise<{
-    status: number;
-    message: string;
-  }> {
+  ): Promise<ApiResponse<UpdateTaskDto>> {
     if (updateTaskDto) {
       try {
         const task = await this.taskRepository.update(id, updateTaskDto);
         if (task) {
-          return {
-            status: HttpStatus.PARTIAL_CONTENT,
-            message: 'Successfully update the task',
-          };
+          return successResponse('Successfully updated tasks.', updateTaskDto);
         } else {
-          return {
-            status: HttpStatus.NOT_FOUND,
-            message: 'Something went wrong while updating the task try again',
-          };
+          return errorResponse(
+            'Something went wrong while updating the task try again',
+            'error',
+          );
         }
       } catch (error) {
-        return {
-          status: error.code,
-          message: error.message,
-        };
+        return errorResponse(error.message, error);
       }
     } else {
-      return {
-        status: HttpStatus.FORBIDDEN,
-        message: 'enter complete data to update.',
-      };
+      return errorResponse(
+        'enter complete data to update.',
+        'error getting complete data',
+      );
     }
   }
 
-  async remove(id: string): Promise<{
-    status: number;
-    message: string;
-  }> {
+  async remove(id: string): Promise<ApiResponse<string>> {
     const findTask = await this.taskRepository.findOneBy({ id });
     if (findTask) {
       await this.taskRepository.delete(id);
-      return {
-        status: HttpStatus.OK,
-        message: 'Successfully deleted the task',
-      };
+      return successResponse('Successfully deleted the task', findTask.id);
     } else {
-      return {
-        status: HttpStatus.NOT_FOUND,
-        message: 'Couldnt find the task to be deleted',
-      };
+      return errorResponse(
+        'Couldnt find the task to be deleted',
+        'could not find the data',
+      );
     }
   }
 }
