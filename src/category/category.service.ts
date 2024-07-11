@@ -31,7 +31,7 @@ export class CategoryService {
 
   async findAll(): Promise<Category[]> {
     const response = await this.categoryRepository.find();
-    console.log(response);
+    console.log(response, '  response from the categories');
     return response;
   }
 }
