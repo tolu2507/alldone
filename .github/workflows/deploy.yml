@@ -1,0 +1,32 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Copy SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+
+      - name: Add SSH key to agent
+        run: |
+          eval $(ssh-agent -s)
+          ssh-add ~/.ssh/id_rsa
+
+      - name: Set up SSH config
+        run: |
+          echo -e "Host ec2-instance\n\tHostName ec2-34-234-73-108.compute-1.amazonaws.com\n\tUser ubuntu\n\tIdentityFile ~/.ssh/id_rsa" >> ~/.ssh/config
+
+      - name: Run deployment script
+        run: ssh ec2-instance '~/deploy.sh'
