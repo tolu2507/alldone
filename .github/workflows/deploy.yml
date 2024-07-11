@@ -3,7 +3,7 @@ name: Deploy to EC2
 on:
   push:
     branches:
-      - master
+      - main
 
 jobs:
   deploy:
@@ -27,6 +27,10 @@ jobs:
       - name: Set up SSH config
         run: |
           echo -e "Host ec2-instance\n\tHostName ec2-34-234-73-108.compute-1.amazonaws.com\n\tUser ubuntu\n\tIdentityFile ~/.ssh/id_rsa" >> ~/.ssh/config
+
+      - name: Add EC2 instance to known_hosts
+        run: |
+          ssh-keyscan -H ec2-34-234-73-108.compute-1.amazonaws.com >> ~/.ssh/known_hosts
 
       - name: Run deployment script
         run: ssh ec2-instance '~/deploy.sh'
